@@ -62,10 +62,9 @@ export default function EmployeeDetail() {
           <h1 style={{ fontSize: 20, fontWeight: 800, color: '#0f172a' }}>Employee Profile</h1>
         </div>
 
-        {/* Profile Card */}
         <div className="section">
           <div style={{ padding: '24px' }}>
-            <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
               <div style={{ width: 80, height: 80, borderRadius: 18, background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 28, fontWeight: 900, flexShrink: 0, overflow: 'hidden' }}>
                 {employee.profileImage ? <img src={`${uploadsUrl}/${employee.profileImage}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials}
               </div>
@@ -110,7 +109,7 @@ export default function EmployeeDetail() {
         <div className="section">
           <div style={{ padding: 24 }}>
             {activeTab === 'Overview' && (
-              <div className="grid-2">
+              <div className="grid-2" style={{ gap: 24 }}>
                 <div>
                   <h3 style={{ fontSize: 14, fontWeight: 700, color: '#1e293b', marginBottom: 16 }}>Personal Information</h3>
                   {[

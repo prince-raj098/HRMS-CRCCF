@@ -30,12 +30,20 @@ const employeeNav = [
   { label: 'My Projects', to: '/my-projects', icon: FolderKanban },
 ];
 
-export default function Sidebar({ collapsed, setCollapsed }) {
+export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobileOpen }) {
   const { user, isAdmin } = useAuth();
   const nav = isAdmin ? adminNav : employeeNav;
+  const location = useLocation();
+
+  // Close mobile sidebar on navigation
+  const handleNavClick = () => {
+    if (window.innerWidth <= 768) {
+      setMobileOpen(false);
+    }
+  };
 
   return (
-    <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
+    <aside className={`sidebar ${collapsed ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}>
       {/* Logo */}
       <div className="sidebar-logo">
         <div className="sidebar-logo-icon">HR</div>
@@ -55,6 +63,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
             to={to}
             title={collapsed ? label : ''}
             className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+            onClick={handleNavClick}
           >
             <Icon size={17} className="nav-link-icon" />
             {!collapsed && <span className="nav-link-label">{label}</span>}

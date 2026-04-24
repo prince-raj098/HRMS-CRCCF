@@ -47,7 +47,7 @@ export default function Dashboard() {
         )}
 
         {/* Charts */}
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20 }}>
+        <div className="dashboard-charts" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20 }}>
           {/* Growth Chart */}
           <div className="section">
             <div className="section-header">

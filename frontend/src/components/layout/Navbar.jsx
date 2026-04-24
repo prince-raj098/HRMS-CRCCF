@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Bell, Search, LogOut, User, ChevronDown } from 'lucide-react';
+import { Bell, Search, LogOut, User, ChevronDown, Menu } from 'lucide-react';
 import api from '../../services/api';
 import { format } from 'date-fns';
 
-export default function Navbar() {
+export default function Navbar({ setMobileOpen }) {
   const { user, logout, isAdmin } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [showNotifs, setShowNotifs] = useState(false);
@@ -39,6 +39,11 @@ export default function Navbar() {
 
   return (
     <header className="navbar">
+      {/* Mobile Menu Toggle */}
+      <button className="mobile-menu-btn" onClick={() => setMobileOpen(true)}>
+        <Menu size={20} />
+      </button>
+
       {/* Search */}
       <div className="navbar-search">
         <Search size={14} className="navbar-search-icon" />
