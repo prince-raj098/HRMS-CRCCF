@@ -38,7 +38,8 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('hrms_user');
     setToken(null);
     setUser(null);
-    window.location.href = '/login';
+    // Use replace to prevent going back to the authenticated state via back button
+    window.location.replace('/login');
   };
 
   const isAdmin = user?.role === 'hr_admin';
