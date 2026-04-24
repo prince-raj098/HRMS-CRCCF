@@ -21,9 +21,11 @@ export default function Login() {
       const loggedInUser = await login(form.username, form.password);
       navigate(loggedInUser.role === 'hr_admin' ? '/dashboard' : '/my-profile', { replace: true });
     } catch (err) {
-      const msg = err.response?.data?.message || 'Login failed';
+      console.error('Login Error:', err);
+      const msg = err.response?.data?.message || err.message || 'Login failed';
       if (msg.toLowerCase().includes('password')) setError('Incorrect password. Please try again.');
       else if (msg.toLowerCase().includes('user') || msg.toLowerCase().includes('not found')) setError('User not found. Check your username.');
+      else if (err.message === 'Network Error') setError('Network Error: Cannot connect to backend server. Ensure it is running and CORS is allowed.');
       else setError(msg);
     } finally { setLoading(false); }
   };
