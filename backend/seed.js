@@ -20,6 +20,13 @@ async function seed() {
       Project.deleteMany({}),
       EmployeeProject.deleteMany({}),
     ]);
+    
+    try {
+      await User.collection.dropIndexes();
+      console.log('Dropped User collection indexes');
+    } catch (e) {
+      console.log('No indexes to drop or collection does not exist');
+    }
     console.log('Cleared existing data');
 
     // Create HR Admin user
