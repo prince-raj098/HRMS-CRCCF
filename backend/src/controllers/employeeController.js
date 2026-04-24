@@ -1,21 +1,29 @@
 const Employee = require('../models/Employee');
 const User = require('../models/User');
 const Department = require('../models/Department');
+const EmployeeProject = require('../models/EmployeeProject');
+const Leave = require('../models/Leave');
+const Attendance = require('../models/Attendance');
+const Payroll = require('../models/Payroll');
 const { format } = require('date-fns');
 
 const generateEmployeeId = async () => {
-  const count = await Employee.countDocuments();
-  const id = `EMP${String(count + 1).padStart(4, '0')}`;
-  const exists = await Employee.findOne({ employeeId: id });
-  if (exists) return generateEmployeeId();
+  let count = await Employee.countDocuments();
+  let id;
+  let exists = true;
+  while (exists) {
+    id = `EMP${String(count + 1).padStart(4, '0')}`;
+    exists = await Employee.findOne({ employeeId: id });
+    if (exists) count++;
+  }
   return id;
 };
 
 const generateDefaultPassword = (firstName, dob) => {
   const d = new Date(dob);
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${firstName.toLowerCase()}${mm}${dd}`;
+  const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(d.getUTCDate()).padStart(2, '0');
+  return `${firstName.replace(/[ \t\r\n]+/g, '').toLowerCase()}${mm}${dd}`;
 };
 
 // GET /api/employees
@@ -116,7 +124,16 @@ exports.deleteEmp = async (req, res, next) => {
   try {
     const employee = await Employee.findById(req.params.id);
     if (!employee) return res.status(404).json({ success: false, message: 'Employee not found.' });
-    await User.findByIdAndDelete(employee.user);
+    if (employee.user) {
+      await User.findByIdAndDelete(employee.user);
+    }
+    // Cascade-delete all related records so no orphaned rows appear anywhere
+    await Promise.all([
+      EmployeeProject.deleteMany({ employee: employee._id }),
+      Leave.deleteMany({ employee: employee._id }),
+      Attendance.deleteMany({ employee: employee._id }),
+      Payroll.deleteMany({ employee: employee._id }),
+    ]);
     await employee.deleteOne();
     res.json({ success: true, message: 'Employee deleted.' });
   } catch (err) { next(err); }
@@ -127,11 +144,35 @@ exports.resetPassword = async (req, res, next) => {
   try {
     const employee = await Employee.findById(req.params.id);
     if (!employee) return res.status(404).json({ success: false, message: 'Employee not found.' });
-    const newPassword = req.body.password || generateDefaultPassword(employee.firstName, employee.dateOfBirth);
-    const user = await User.findById(employee.user);
-    user.password = newPassword;
-    user.isFirstLogin = true;
-    await user.save();
+    
+    let newPassword = req.body.password || generateDefaultPassword(employee.firstName, employee.dateOfBirth);
+    let user = null;
+
+    if (employee.user) {
+      user = await User.findById(employee.user);
+    } else {
+      // Look up by employee reference just in case
+      user = await User.findOne({ employee: employee._id });
+    }
+
+    if (!user) {
+      // Re-create the user if they were completely missing
+      user = await User.create({
+        username: employee.employeeId,
+        password: newPassword,
+        role: 'employee',
+        employee: employee._id,
+        employeeId: employee.employeeId,
+        isFirstLogin: true,
+      });
+      employee.user = user._id;
+      await employee.save();
+    } else {
+      user.password = newPassword;
+      user.isFirstLogin = true;
+      await user.save();
+    }
+
     res.json({ success: true, message: 'Password reset successfully.', newPassword });
   } catch (err) { next(err); }
 };

@@ -34,14 +34,17 @@ exports.getDashboardStats = async (req, res, next) => {
     const departmentStats = await Employee.aggregate([
       { $group: { _id: '$department', count: { $sum: 1 } } },
       { $lookup: { from: 'departments', localField: '_id', foreignField: '_id', as: 'dept' } },
-      { $unwind: { path: '$dept', preserveNullAndEmpty: true } },
+      { $unwind: { path: '$dept', preserveNullAndEmptyArrays: true } },
       { $project: { name: { $ifNull: ['$dept.name', 'Unassigned'] }, count: 1 } },
     ]);
 
-    // Active employees on projects
-    const activeOnProjects = await EmployeeProject.find({ isActive: true })
+    // Active employees on projects — exclude orphaned records where employee was deleted
+    const activeOnProjectsRaw = await EmployeeProject.find({ isActive: true })
       .populate('employee', 'firstName lastName employeeId profileImage designation')
       .populate('project', 'name status');
+
+    // Filter out any stale records where the employee no longer exists
+    const activeOnProjects = activeOnProjectsRaw.filter(ep => ep.employee != null);
 
     res.json({
       success: true,

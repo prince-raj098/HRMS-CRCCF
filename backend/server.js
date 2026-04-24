@@ -53,6 +53,8 @@ app.use('/api/performance', require('./src/routes/performance'));
 app.use('/api/documents', require('./src/routes/documents'));
 app.use('/api/dashboard', require('./src/routes/dashboard'));
 app.use('/api/departments', require('./src/routes/departments'));
+app.use('/api/reports/daily', require('./src/routes/dailyReports'));
+app.use('/api/email', require('./src/routes/email'));
 
 // Error handling
 app.use(notFound);

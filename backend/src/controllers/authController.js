@@ -12,7 +12,9 @@ exports.login = async (req, res, next) => {
     if (!username || !password)
       return res.status(400).json({ success: false, message: 'Username and password required.' });
 
-    const user = await User.findOne({ username }).populate('employee');
+    // Case-insensitive lookup and trimming for username
+    const cleanUsername = username.trim();
+    const user = await User.findOne({ username: new RegExp(`^${cleanUsername}$`, 'i') }).populate('employee');
     if (!user || !user.isActive)
       return res.status(401).json({ success: false, message: 'Invalid credentials.' });
 

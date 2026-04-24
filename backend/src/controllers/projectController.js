@@ -101,6 +101,16 @@ exports.removeEmployee = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+// GET /api/projects/my-projects
+exports.getMyProjects = async (req, res, next) => {
+  try {
+    const assignments = await EmployeeProject.find({ employee: req.user.employee, isActive: true })
+      .populate('project', 'name description status priority expectedCompletionDate projectId members')
+      .populate('employee', 'firstName lastName employeeId profileImage designation department');
+    res.json({ success: true, data: assignments });
+  } catch (err) { next(err); }
+};
+
 // GET /api/projects/active-employees - For Dashboard
 exports.getActiveEmployeesOnProjects = async (req, res, next) => {
   try {

@@ -15,6 +15,12 @@ exports.errorHandler = (err, req, res, next) => {
     statusCode = 400;
   }
 
+  // Mongoose CastError (invalid ID)
+  if (err.name === 'CastError') {
+    message = `Invalid ${err.path}: ${err.value}`;
+    statusCode = 400;
+  }
+
   // JWT errors
   if (err.name === 'JsonWebTokenError') {
     message = 'Invalid token.';

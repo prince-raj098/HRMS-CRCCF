@@ -1,6 +1,6 @@
 # CRCCF HRMS — Human Resource Management System
 
-A full-stack, production-ready HRMS built with Next.js, Express.js, and MongoDB.
+A full-stack, production-ready HRMS built with React.js, Express.js, and MongoDB.
 
 ---
 

@@ -2,12 +2,23 @@ const Attendance = require('../models/Attendance');
 const Leave = require('../models/Leave');
 const Employee = require('../models/Employee');
 
+// Helper to check if user is HR/Admin
+const isHR = (user) => ['hr_admin', 'admin'].includes(user.role);
+
 // GET /api/attendance
 exports.getAttendance = async (req, res, next) => {
   try {
     const { employeeId, month, year, page = 1, limit = 31 } = req.query;
     const query = {};
-    if (employeeId) query.employee = employeeId;
+    
+    // Security: Only HR can view other employees' attendance
+    if (!isHR(req.user)) {
+      if (!req.user.employee) return res.status(400).json({ success: false, message: 'Employee profile not found' });
+      query.employee = req.user.employee._id;
+    } else if (employeeId) {
+      query.employee = employeeId;
+    }
+
     if (month && year) {
       const start = new Date(year, month - 1, 1);
       const end = new Date(year, month, 0, 23, 59, 59);
@@ -46,6 +57,12 @@ exports.markAttendance = async (req, res, next) => {
 exports.getAttendanceSummary = async (req, res, next) => {
   try {
     const { month, year } = req.query;
+    
+    // Security: Only HR can view other employees' summary
+    if (!isHR(req.user) && String(req.user.employee?._id) !== req.params.employeeId) {
+      return res.status(403).json({ success: false, message: 'Permission denied. You can only view your own summary.' });
+    }
+
     const start = new Date(year, month - 1, 1);
     const end = new Date(year, month, 0, 23, 59, 59);
     const records = await Attendance.find({ employee: req.params.employeeId, date: { $gte: start, $lte: end } });
@@ -67,16 +84,26 @@ exports.getLeaves = async (req, res, next) => {
     const { status, employeeId, page = 1, limit = 10 } = req.query;
     const query = {};
     if (status) query.status = status;
-    if (employeeId) query.employee = employeeId;
-    if (req.user.role === 'employee') query.employee = req.user.employee._id;
+
+    // Security: Only HR can see all leaves or filter by arbitrary employeeId
+    if (!isHR(req.user)) {
+      if (!req.user.employee) return res.status(400).json({ success: false, message: 'Employee profile not found' });
+      query.employee = req.user.employee._id;
+    } else if (employeeId) {
+      query.employee = employeeId;
+    }
 
     const total = await Leave.countDocuments(query);
-    const leaves = await Leave.find(query)
+    const leavesRaw = await Leave.find(query)
       .populate('employee', 'firstName lastName employeeId')
       .populate('approvedBy', 'username')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
+
+    // Filter out stale records where the employee was deleted
+    const leaves = leavesRaw.filter(l => l.employee != null);
+
     res.json({ success: true, data: leaves, total });
   } catch (err) { next(err); }
 };
@@ -88,7 +115,11 @@ exports.applyLeave = async (req, res, next) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
     const totalDays = Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
-    const empId = req.user.role === 'employee' ? req.user.employee._id : req.body.employee;
+    
+    // Security: ensure correct employee assignment
+    const empId = isHR(req.user) && req.body.employee ? req.body.employee : req.user.employee?._id;
+    if (!empId) return res.status(400).json({ success: false, message: 'Employee profile required' });
+
     const leave = await Leave.create({ employee: empId, leaveType, startDate: start, endDate: end, totalDays, reason });
     res.status(201).json({ success: true, data: leave });
   } catch (err) { next(err); }

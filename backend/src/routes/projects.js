@@ -4,6 +4,7 @@ const ctrl = require('../controllers/projectController');
 const { protect, hrAdmin } = require('../middleware/auth');
 
 router.use(protect);
+router.get('/my-projects', ctrl.getMyProjects);
 router.get('/active-employees', ctrl.getActiveEmployeesOnProjects);
 router.get('/', ctrl.getProjects);
 router.get('/:id', ctrl.getProject);

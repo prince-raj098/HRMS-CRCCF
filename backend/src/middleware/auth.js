@@ -31,4 +31,4 @@ exports.restrictTo = (...roles) => {
   };
 };
 
-exports.hrAdmin = exports.restrictTo('hr_admin');
+exports.hrAdmin = exports.restrictTo('hr_admin', 'admin');

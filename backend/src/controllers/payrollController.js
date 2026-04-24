@@ -13,14 +13,20 @@ exports.getPayrolls = async (req, res, next) => {
     if (month) query.month = parseInt(month);
     if (year) query.year = parseInt(year);
     if (status) query.status = status;
-    if (req.user.role === 'employee') query.employee = req.user.employee._id;
+    if (req.user.role === 'employee' && req.user.employee) {
+      query.employee = req.user.employee._id;
+    }
 
     const total = await Payroll.countDocuments(query);
-    const payrolls = await Payroll.find(query)
+    const payrollsRaw = await Payroll.find(query)
       .populate('employee', 'firstName lastName employeeId department designation')
       .sort({ year: -1, month: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
+
+    // Filter out stale records where the employee was deleted
+    const payrolls = payrollsRaw.filter(p => p.employee != null);
+
     res.json({ success: true, data: payrolls, total });
   } catch (err) { next(err); }
 };
@@ -29,6 +35,7 @@ exports.getPayrolls = async (req, res, next) => {
 exports.generatePayroll = async (req, res, next) => {
   try {
     const { employeeId, month, year } = req.body;
+    if (!employeeId) return res.status(400).json({ success: false, message: 'Please select an employee.' });
     const employee = await Employee.findById(employeeId).populate('department');
     if (!employee) return res.status(404).json({ success: false, message: 'Employee not found.' });
 
