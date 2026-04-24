@@ -22,11 +22,20 @@ export default function Login() {
       navigate(loggedInUser.role === 'hr_admin' ? '/dashboard' : '/my-profile', { replace: true });
     } catch (err) {
       console.error('Login Error:', err);
+      const statusCode = err.response?.status;
       const msg = err.response?.data?.message || err.message || 'Login failed';
-      if (msg.toLowerCase().includes('password')) setError('Incorrect password. Please try again.');
-      else if (msg.toLowerCase().includes('user') || msg.toLowerCase().includes('not found')) setError('User not found. Check your username.');
-      else if (err.message === 'Network Error') setError('Network Error: Cannot connect to backend server. Ensure it is running and CORS is allowed.');
-      else setError(msg);
+      
+      if (statusCode === 404) {
+        setError('API Error: The login endpoint was not found (404). Check your backend URL/Deployment.');
+      } else if (msg.toLowerCase().includes('password')) {
+        setError('Incorrect password. Please try again.');
+      } else if (msg.toLowerCase().includes('user') || msg.toLowerCase().includes('not found')) {
+        setError('User not found. Check your username.');
+      } else if (err.message === 'Network Error') {
+        setError('Network Error: Cannot connect to backend server. Ensure it is running and CORS is allowed.');
+      } else {
+        setError(msg);
+      }
     } finally { setLoading(false); }
   };
 

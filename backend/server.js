@@ -16,8 +16,14 @@ if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 const app = express();
 
+// Trust proxy for secure cookies/IP tracking on Render/Vercel
+app.set('trust proxy', 1);
+
 // Security
-app.use(helmet({ crossOriginResourcePolicy: false }));
+app.use(helmet({ 
+  crossOriginResourcePolicy: false,
+  contentSecurityPolicy: false // Disable CSP for easier debugging during initial deployment
+}));
 app.use(compression());
 
 // CORS
