@@ -19,18 +19,15 @@ const app = express();
 // Trust proxy for secure cookies/IP tracking on Render/Vercel
 app.set('trust proxy', 1);
 
-// Security
-app.use(helmet({ 
-  crossOriginResourcePolicy: false,
-  contentSecurityPolicy: false // Disable CSP for easier debugging during initial deployment
-}));
-app.use(compression());
-
-// CORS
+// CORS - Moved to the top to ensure headers are always set
 const allowedOrigins = [
   process.env.FRONTEND_URL,
-  'http://localhost:3000',
   'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:5174',
+  'http://127.0.0.1:5174',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
   'https://hrms-crccf.vercel.app'
 ].filter(Boolean);
 
@@ -39,13 +36,31 @@ app.use(cors({
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
+      console.log('CORS blocked for origin:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
 }));
+
+// Simple request logger
+app.use((req, res, next) => {
+  if (req.method !== 'OPTIONS') {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.url} - Origin: ${req.get('origin')}`);
+  }
+  next();
+});
+
+// Security - Relaxed for easier debugging
+app.use(helmet({ 
+  crossOriginResourcePolicy: false,
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+  crossOriginOpenerPolicy: false
+}));
+app.use(compression());
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));

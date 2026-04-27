@@ -15,12 +15,22 @@ exports.login = async (req, res, next) => {
     // Case-insensitive lookup and trimming for username
     const cleanUsername = username.trim();
     const user = await User.findOne({ username: new RegExp(`^${cleanUsername}$`, 'i') }).populate('employee');
-    if (!user || !user.isActive)
+    
+    if (!user) {
+      console.warn(`Login failed: User "${cleanUsername}" not found.`);
       return res.status(401).json({ success: false, message: 'Invalid credentials.' });
+    }
+
+    if (!user.isActive) {
+      console.warn(`Login failed: User "${cleanUsername}" is inactive.`);
+      return res.status(401).json({ success: false, message: 'Invalid credentials.' });
+    }
 
     const isMatch = await user.correctPassword(password);
-    if (!isMatch)
+    if (!isMatch) {
+      console.warn(`Login failed: Password mismatch for user "${cleanUsername}".`);
       return res.status(401).json({ success: false, message: 'Invalid credentials.' });
+    }
 
     await user.constructor.updateOne({ _id: user._id }, { lastLogin: new Date() });
 
